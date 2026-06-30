@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeBridge AI – NDRF & BMC Disaster Response Portal</title>
+  
+  <!-- Font Inclusions -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Global Container -->
+  <div class="app-container" id="appContainer">
+    
+    <!-- Top System Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon-wrapper">
+          <i class="fa-solid fa-bridge-circle-check brand-icon animate-pulse-glow"></i>
+        </div>
+        <div class="brand-text">
+          <h1>LifeBridge AI</h1>
+          <span class="brand-tagline">NDRF & BMC Disaster Response Coordination</span>
+        </div>
+      </div>
+
+      <!-- Network and Grid Indicators -->
+      <div class="system-status-bar">
+        <div class="status-indicator tooltip" data-tooltip="MSPGCL Power Grid Health">
+          <i class="fa-solid fa-plug-circle-bolt status-icon text-cyan" id="powerIcon"></i>
+          <span class="status-label">Power Grid:</span>
+          <span class="status-value text-cyan" id="powerStatus">100%</span>
+        </div>
+        <div class="status-indicator tooltip" data-tooltip="BSNL & Jio Network Strength">
+          <i class="fa-solid fa-tower-cell status-icon text-cyan" id="commIcon"></i>
+          <span class="status-label">Telecom:</span>
+          <span class="status-value text-cyan" id="commStatus">Stable</span>
+        </div>
+        <div class="status-indicator tooltip" data-tooltip="IMD Weather Warning Status">
+          <i class="fa-solid fa-cloud-sun status-icon text-cyan" id="weatherIcon"></i>
+          <span class="status-label">IMD Alert:</span>
+          <span class="status-value text-cyan" id="weatherStatus">Normal</span>
+        </div>
+        <button class="network-mode-btn" id="networkModeBtn" title="Toggle Low-Bandwidth Offline Mode">
+          <i class="fa-solid fa-wifi text-green" id="networkModeIcon"></i>
+          <span id="networkModeText">Online Mode</span>
+        </button>
+      </div>
+
+      <!-- Quick Action SOS -->
+      <div class="header-actions">
+        <button class="sos-alert-btn" id="sosHeaderBtn">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>SEND SOS (112)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="workspace">
+      
+      <!-- Left sidebar navigation -->
+      <nav class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item active" data-tab="dashboard">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Dashboard</span>
+          </li>
+          <li class="nav-item" data-tab="map-view">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Crisis Map</span>
+          </li>
+          <li class="nav-item" data-tab="safe-register">
+            <i class="fa-solid fa-users-viewfinder"></i>
+            <span>Safe Register</span>
+          </li>
+          <li class="nav-item" data-tab="community-hub">
+            <i class="fa-solid fa-handshake-angle"></i>
+            <span>Community Hub</span>
+          </li>
+          <li class="nav-item" data-tab="checklists">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Survival Guides</span>
+          </li>
+        </ul>
+
+        <!-- active scenario indicator card -->
+        <div class="active-scenario-card" id="activeScenarioCard">
+          <div class="scenario-status-header">
+            <span class="pulse-indicator status-green" id="scenarioPulse"></span>
+            <span class="scenario-title" id="scenarioLabel">No Active Warning</span>
+          </div>
+          <p class="scenario-description" id="scenarioDesc">LifeBridge monitoring is synchronized with IMD & SDMA. All sectors green.</p>
+        </div>
+      </nav>
+
+      <!-- Central Content Dynamic Switcher -->
+      <main class="main-content">
+        
+        <!-- ================= TAB: DASHBOARD ================= -->
+        <section class="tab-panel active" id="dashboard">
+          
+          <!-- Alert Banner / Broadcast Feed -->
+          <div class="broadcast-banner" id="broadcastBanner">
+            <div class="broadcast-icon"><i class="fa-solid fa-bullhorn text-cyan"></i></div>
+            <div class="broadcast-marquee">
+              <span id="broadcastText">NDRF Emergency Helpdesk active. Satellite imagery loading. Local control centers on standby.</span>
+            </div>
+          </div>
+
+          <!-- Stats Counters -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon bg-cyan-soft"><i class="fa-solid fa-house-medical text-cyan"></i></div>
+              <div class="stat-details">
+                <span class="stat-num" id="statShelters">4</span>
+                <span class="stat-label">Relief Camps</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bg-blue-soft"><i class="fa-solid fa-hospital text-blue"></i></div>
+              <div class="stat-details">
+                <span class="stat-num" id="statHospitals">3</span>
+                <span class="stat-label">Municipal ERs</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bg-red-soft"><i class="fa-solid fa-road-barrier text-red"></i></div>
+              <div class="stat-details">
+                <span class="stat-num" id="statRoads">0</span>
+                <span class="stat-label">Blocked Highways</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bg-amber-soft"><i class="fa-solid fa-person-circle-exclamation text-amber"></i></div>
+              <div class="stat-details">
+                <span class="stat-num" id="statSOS">0</span>
+                <span class="stat-label">Active SOS Tickets</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two Column Dashboard Layout -->
+          <div class="dashboard-row">
+            
+            <!-- Left: Quick Emergency Map Preview -->
+            <div class="dashboard-column col-7">
+              <div class="content-card map-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-earth-americas icon-accent"></i> Live Threat Map (Mumbai Metro)</h3>
+                  <button class="card-header-btn" onclick="switchTab('map-view')">Expand Map <i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="card-body map-container-wrapper">
+                  <div id="map" class="map-element"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Real-time Incident Feed -->
+            <div class="dashboard-column col-5">
+              <div class="content-card feed-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-list-check icon-accent"></i> Real-time Incident Log</h3>
+                  <span class="badge badge-pulse-red" id="liveFeedCount">0 Active</span>
+                </div>
+                <div class="card-body">
+                  <div class="incident-timeline" id="incidentLog">
+                    <!-- Dynamic updates filled by JS -->
+                    <div class="empty-feed-placeholder" id="emptyFeedPlaceholder">
+                      <i class="fa-solid fa-shield-halved"></i>
+                      <p>No active incidents reported. Monitoring environment.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Hospital and Shelter Capacity Monitor -->
+          <div class="dashboard-row">
+            <div class="dashboard-column col-6">
+              <div class="content-card capacity-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-shield-cat icon-accent"></i> NDRF & BMC Relief Camps</h3>
+                </div>
+                <div class="card-body" id="shelterCapacityList">
+                  <!-- JS Dynamic Content -->
+                </div>
+              </div>
+            </div>
+            
+            <div class="dashboard-column col-6">
+              <div class="content-card capacity-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-circle-h icon-accent"></i> Hospital ER Bed Capacities</h3>
+                </div>
+                <div class="card-body" id="hospitalCapacityList">
+                  <!-- JS Dynamic Content -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================= TAB: FULL MAP VIEW ================= -->
+        <section class="tab-panel" id="map-view">
+          <div class="content-card full-map-card">
+            <div class="map-filters-header">
+              <div class="filter-title">
+                <h3><i class="fa-solid fa-compass-drafting icon-accent"></i> Comprehensive Crisis Navigation Map</h3>
+                <p>Track water blockages, NDRF relief shelters, hospital beds, and road statuses.</p>
+              </div>
+              <div class="map-legend">
+                <div class="legend-item"><span class="legend-dot bg-green"></span> Relief Camp</div>
+                <div class="legend-item"><span class="legend-dot bg-blue"></span> Municipal Hospital</div>
+                <div class="legend-item"><span class="legend-dot bg-orange"></span> Incident Point</div>
+                <div class="legend-item"><span class="legend-line bg-red"></span> Closed Highway</div>
+                <div class="legend-item"><span class="legend-line bg-blue-route"></span> Evacuation Corridor</div>
+              </div>
+            </div>
+            <div class="card-body full-map-body">
+              <div id="full-map" class="map-element-full"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: SAFE REGISTER & MISSING PERSONS ================= -->
+        <section class="tab-panel" id="safe-register">
+          <div class="dashboard-row">
+            <!-- Left: Mark yourself safe -->
+            <div class="dashboard-column col-5">
+              <div class="content-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-user-shield icon-accent"></i> Register as "SAFE"</h3>
+                </div>
+                <div class="card-body">
+                  <p class="form-instructions">Let NDRF response teams and family members know you are secure. Fill out your details below.</p>
+                  <form class="custom-form" id="registerSafeForm">
+                    <div class="form-group">
+                      <label for="safeName">Full Name <span class="required">*</span></label>
+                      <input type="text" id="safeName" required placeholder="e.g., Rajesh Kumar">
+                    </div>
+                    <div class="form-group">
+                      <label for="safePhone">Contact Number <span class="required">*</span></label>
+                      <input type="tel" id="safePhone" required placeholder="e.g., +91 98765 43210">
+                    </div>
+                    <div class="form-group">
+                      <label for="safeLocation">Current Location / Ward <span class="required">*</span></label>
+                      <select id="safeLocation" required>
+                        <option value="" disabled selected>Select Ward Location</option>
+                        <option value="Colaba / Fort (South Mumbai)">Colaba / Fort (South Mumbai)</option>
+                        <option value="Marine Drive / Worli Docks">Marine Drive / Worli Docks</option>
+                        <option value="Malabar Hill (Uplands)">Malabar Hill (Uplands)</option>
+                        <option value="Dharavi / Kurla Corridor">Dharavi / Kurla Corridor</option>
+                        <option value="Bandra / Andheri Suburbs">Bandra / Andheri Suburbs</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="safeStatus">Current Condition / Relief Shelter</label>
+                      <input type="text" id="safeStatus" placeholder="e.g., Safe at Worli Koliwada camp, no injury.">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                      <i class="fa-solid fa-check-double"></i> Mark Me Safe
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Search Safe & Missing Bulletin -->
+            <div class="dashboard-column col-7">
+              <div class="content-card">
+                <div class="card-header bulletin-header">
+                  <h3><i class="fa-solid fa-clipboard-question icon-accent"></i> Crisis Status Bulletin</h3>
+                  <div class="bulletin-actions">
+                    <input type="text" id="bulletinSearch" placeholder="Search by name or area..." class="search-input">
+                    <button class="btn btn-secondary-small" id="reportMissingBtn"><i class="fa-solid fa-user-plus"></i> Report Missing</button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Tabs to filter Safe vs Missing -->
+                  <div class="bulletin-tabs">
+                    <button class="bulletin-tab active" data-filter="all">All Statuses</button>
+                    <button class="bulletin-tab" data-filter="safe">Registered Safe</button>
+                    <button class="bulletin-tab" data-filter="missing">Reported Missing</button>
+                  </div>
+                  
+                  <div class="bulletin-list" id="bulletinList">
+                    <!-- Dynamic Bulletin Items -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hidden Overlay Modal for Reporting Missing Person -->
+          <div class="modal-overlay" id="missingModal">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Report a Missing Person</h3>
+                <button class="close-modal-btn" id="closeModalBtn">&times;</button>
+              </div>
+              <div class="modal-body">
+                <form id="missingPersonForm" class="custom-form">
+                  <div class="form-group">
+                    <label for="missingName">Missing Person's Full Name <span class="required">*</span></label>
+                    <input type="text" id="missingName" required placeholder="e.g. Sunita Rao">
+                  </div>
+                  <div class="form-group">
+                    <label for="missingAge">Age</label>
+                    <input type="number" id="missingAge" placeholder="e.g. 58">
+                  </div>
+                  <div class="form-group">
+                    <label for="missingLastSeen">Last Seen Location & Time <span class="required">*</span></label>
+                    <input type="text" id="missingLastSeen" required placeholder="e.g. Kurla Station platforms, Monday 6 PM">
+                  </div>
+                  <div class="form-group">
+                    <label for="missingDetails">Physical Description / Clothes</label>
+                    <textarea id="missingDetails" rows="3" placeholder="Wearing green saree, carrying brown handbag."></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="reporterContact">Your Name & Mobile Number <span class="required">*</span></label>
+                    <input type="text" id="reporterContact" required placeholder="e.g. Ramesh Rao (Son) - 9812345678">
+                  </div>
+                  <button type="submit" class="btn btn-danger btn-block">Publish Alert to Bulletin</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: COMMUNITY HUB ================= -->
+        <section class="tab-panel" id="community-hub">
+          <div class="dashboard-row">
+            
+            <!-- Left: Offer Aid/Volunteer form -->
+            <div class="dashboard-column col-4">
+              <div class="content-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-hand-holding-hand icon-accent"></i> Provide Aid & Volunteer</h3>
+                </div>
+                <div class="card-body">
+                  <p class="form-instructions">Have resources, medical training, supplies, or transport? Register to support local efforts.</p>
+                  <form class="custom-form" id="volunteerForm">
+                    <div class="form-group">
+                      <label for="volunteerName">Your Name/NGO <span class="required">*</span></label>
+                      <input type="text" id="volunteerName" required placeholder="e.g. Robin Hood Army (Mumbai Division)">
+                    </div>
+                    <div class="form-group">
+                      <label for="volunteerContact">Contact Mobile <span class="required">*</span></label>
+                      <input type="text" id="volunteerContact" required placeholder="e.g., 98300 12345">
+                    </div>
+                    <div class="form-group">
+                      <label for="volunteerType">Aid Category <span class="required">*</span></label>
+                      <select id="volunteerType" required>
+                        <option value="" disabled selected>Select aid category</option>
+                        <option value="Supplies (Water, Food, Blankets)">Supplies (Water, Food, Blankets)</option>
+                        <option value="Medical (First Aid, Nursing, Doctors)">Medical Support (First Aid, CPR)</option>
+                        <option value="Logistics (Heavy Vehicles, Boats, Transport)">Logistics (Heavy Vehicles, Boats, SUVs)</option>
+                        <option value="Rescue/Manpower (Search and Rescue)">Rescue / Relief Manpower</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="volunteerDetails">Description of Available Aid <span class="required">*</span></label>
+                      <textarea id="volunteerDetails" rows="3" required placeholder="Available with Mahindra Thar 4x4, 100 food packets, clean water cans."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-cyan btn-block">
+                      <i class="fa-solid fa-heart-pulse"></i> Submit Support Offer
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Mutual Aid Matching Board -->
+            <div class="dashboard-column col-8">
+              <div class="content-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-hands-holding-child icon-accent"></i> Community Aid Exchange Board</h3>
+                  <span class="badge badge-cyan" id="matchCounter">0 Matches Processed</span>
+                </div>
+                <div class="card-body">
+                  <div class="aid-grid">
+                    
+                    <div class="aid-sub-column">
+                      <h4>Active Aid Requests (Citizen Needs)</h4>
+                      <div class="aid-list" id="aidRequestsList">
+                        <!-- Dynamic Needs (from SOS submissions) -->
+                      </div>
+                    </div>
+                    
+                    <div class="aid-sub-column">
+                      <h4>Active Support Offers (Volunteers)</h4>
+                      <div class="aid-list" id="aidOffersList">
+                        <!-- Dynamic Offers -->
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </section>
+
+        <!-- ================= TAB: CHECKLISTS & SURVIVAL GUIDES ================= -->
+        <section class="tab-panel" id="checklists">
+          <div class="dashboard-row">
+            
+            <!-- Left: Custom Checklist Generator -->
+            <div class="dashboard-column col-4">
+              <div class="content-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-wand-magic-sparkles icon-accent"></i> Handbook Builder</h3>
+                </div>
+                <div class="card-body">
+                  <p class="form-instructions">Select a crisis type to generate a tailored emergency checklist and safety handbook guidelines.</p>
+                  
+                  <div class="disaster-choice-buttons">
+                    <button class="choice-btn active" data-type="flood">
+                      <i class="fa-solid fa-water"></i> Monsoon Floods
+                    </button>
+                    <button class="choice-btn" data-type="earthquake">
+                      <i class="fa-solid fa-house-crack"></i> Earthquake Action
+                    </button>
+                    <button class="choice-btn" data-type="cyclone">
+                      <i class="fa-solid fa-tornado"></i> Coastal Cyclone
+                    </button>
+                    <button class="choice-btn" data-type="firstaid">
+                      <i class="fa-solid fa-kit-medical"></i> Basic First Aid
+                    </button>
+                  </div>
+                  
+                  <div class="survival-handbook-tips" id="handbookTips">
+                    <!-- Generated tips based on type -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Interactive To-Do Checklist -->
+            <div class="dashboard-column col-8">
+              <div class="content-card">
+                <div class="card-header checklist-header-flex">
+                  <div>
+                    <h3 id="checklistTitle"><i class="fa-solid fa-list-check icon-accent"></i> Emergency Preparation Checklist</h3>
+                    <p id="checklistSubtitle">Essential preparation kit before evacuation.</p>
+                  </div>
+                  <div class="checklist-progress-wrapper">
+                    <span id="checklistProgressText">0/6 Done</span>
+                    <div class="checklist-progress-bar">
+                      <div class="checklist-progress-fill" id="checklistProgressFill" style="width: 0%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="checklist-items-container" id="checklistItems">
+                    <!-- Dynamic Checklist items loaded here -->
+                  </div>
+                  <div class="add-custom-item-row">
+                    <input type="text" id="customItemInput" placeholder="Add custom item to your list..." class="custom-item-input">
+                    <button class="btn btn-secondary-small" id="addCustomItemBtn"><i class="fa-solid fa-plus"></i> Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right Panel: Permanent AI Chat & SOS Form Section -->
+      <aside class="right-panel">
+        
+        <!-- Tab view toggle for AI Assistant vs SOS Quick Panel -->
+        <div class="right-panel-tabs">
+          <button class="panel-tab-btn active" data-side-tab="ai-chat">
+            <i class="fa-solid fa-robot"></i> LifeBridge AI
+          </button>
+          <button class="panel-tab-btn" data-side-tab="sos-form">
+            <i class="fa-solid fa-truck-medical text-red"></i> Log SOS (112)
+          </button>
+        </div>
+
+        <!-- RIGHT PANEL CONTENT: AI CHATBOT -->
+        <div class="right-panel-content active" id="ai-chat">
+          <div class="chat-container">
+            <div class="chat-header">
+              <div class="ai-avatar">
+                <i class="fa-solid fa-brain-circuit"></i>
+                <span class="ai-status-dot online"></span>
+              </div>
+              <div class="chat-title">
+                <h3>Crisis response Agent</h3>
+                <span>LifeBridge India AI System</span>
+              </div>
+            </div>
+
+            <!-- Chat Message Feed -->
+            <div class="chat-history" id="chatHistory">
+              <div class="chat-message ai">
+                <div class="msg-bubble">
+                  Namaste! I am the <strong>LifeBridge India Disaster AI Assistant</strong>. 
+                  <br><br>
+                  I monitor active IMD weather reports, municipal hospital capacities, and NDRF relief camps across the region.
+                  <br><br>
+                  How can I guide you or help dispatch support today?
+                </div>
+                <span class="msg-timestamp">System Live</span>
+              </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="chat-suggestions" id="chatSuggestions">
+              <button class="suggest-btn" data-query="Where is the nearest relief camp?">Find Relief Camps</button>
+              <button class="suggest-btn" data-query="Which roads are flooded or blocked?">Check Flooded Roads</button>
+              <button class="suggest-btn" data-query="What should I prepare for monsoon floods?">Monsoon Guide</button>
+              <button class="suggest-btn" data-query="How do I perform basic CPR?">First Aid / CPR</button>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-wrapper">
+              <input type="text" id="chatInputField" placeholder="Ask AI anything about the emergency..." autocomplete="off">
+              <button id="sendChatBtn" class="send-chat-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL CONTENT: SOS FORM -->
+        <div class="right-panel-content" id="sos-form">
+          <div class="sos-form-wrapper">
+            <div class="sos-form-header">
+              <i class="fa-solid fa-house-fire text-red sos-form-icon"></i>
+              <h3>Log Emergency SOS Alert</h3>
+              <p>Direct alert link to NDRF dispatcher and local NGO groups.</p>
+            </div>
+            
+            <form id="sosReportForm" class="custom-form sos-form-body">
+              <div class="form-group">
+                <label for="sosName">Contact Person Name <span class="required">*</span></label>
+                <input type="text" id="sosName" required placeholder="e.g. Sunita Sharma">
+              </div>
+              <div class="form-group">
+                <label for="sosPhone">Mobile Number <span class="required">*</span></label>
+                <input type="tel" id="sosPhone" required placeholder="e.g. +91 99999 12345">
+              </div>
+              <div class="form-group">
+                <label for="sosSector">Emergency Location / Ward <span class="required">*</span></label>
+                <select id="sosSector" required>
+                  <option value="" disabled selected>Select emergency ward</option>
+                  <option value="Colaba / Fort">Colaba / Fort (South Mumbai)</option>
+                  <option value="Marine Drive / Worli">Marine Drive / Worli Docks</option>
+                  <option value="Malabar Hill">Malabar Hill (Uplands)</option>
+                  <option value="Dharavi / Kurla">Dharavi / Kurla Corridor</option>
+                  <option value="Bandra / Andheri">Bandra / Andheri Suburbs</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sosSeverity">Severity level <span class="required">*</span></label>
+                <div class="severity-options">
+                  <label class="severity-btn level-high">
+                    <input type="radio" name="sosSeverity" value="CRITICAL" required>
+                    <span>CRITICAL (Life Rescue)</span>
+                  </label>
+                  <label class="severity-btn level-med">
+                    <input type="radio" name="sosSeverity" value="MEDIUM" required>
+                    <span>MEDIUM (Injury / Trapped)</span>
+                  </label>
+                  <label class="severity-btn level-low">
+                    <input type="radio" name="sosSeverity" value="MINOR" required>
+                    <span>MINOR (Water / Supplies)</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="sosRequestType">Incident Category <span class="required">*</span></label>
+                <select id="sosRequestType" required>
+                  <option value="" disabled selected>Select incident category</option>
+                  <option value="Medical Emergency">Medical Trauma / Ambulance Rescue</option>
+                  <option value="Flooding Water Trapped">Water Logging / Stranded in Flood</option>
+                  <option value="Structural Damage / Collapse">Building / Wall Collapse / Fire</option>
+                  <option value="Shortage (Water / Food)">Urgent Food / Clean Water Shortage</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sosDetails">Detailed Emergency Notes <span class="required">*</span></label>
+                <textarea id="sosDetails" rows="4" required placeholder="e.g. Heavy water logging at LBS road Kurla, ground floor rooms flooded. Need boat rescue for 4 people including child."></textarea>
+              </div>
+              
+              <button type="submit" class="btn btn-danger btn-block animate-pulse-glow">
+                <i class="fa-solid fa-location-arrow"></i> DISPATCH SOS ALERT
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+    <!-- Bottom Simulator Control Bar -->
+    <footer class="simulator-console">
+      <div class="console-label">
+        <i class="fa-solid fa-sliders text-cyan"></i>
+        <span>DISASTER SIMULATION CONTROL PANEL</span>
+      </div>
+      <div class="simulation-actions">
+        <button class="sim-btn sim-flood" id="btnSimFlood" title="Simulate high tides combined with heavy monsoon precipitation">
+          <i class="fa-solid fa-water"></i> Trigger Mumbai Floods
+        </button>
+        <button class="sim-btn sim-earthquake" id="btnSimEarthquake" title="Simulate tectonic tremor causing collapse risks">
+          <i class="fa-solid fa-house-crack"></i> Trigger Earth Tremor (5.8 M)
+        </button>
+        <button class="sim-btn sim-cyclone" id="btnSimCyclone" title="Simulate Cyclone Nisarga approaching the coastal harbor">
+          <i class="fa-solid fa-tornado"></i> Trigger Cyclone Nisarga
+        </button>
+        <button class="sim-btn sim-reset" id="btnSimReset" title="Restore system metrics to standard monsoon monitoring state">
+          <i class="fa-solid fa-arrows-rotate"></i> Reset Simulation
+        </button>
+      </div>
+      <div class="simulator-info-tip">
+        <span>Click tabs or test interactive maps when simulating natural hazards.</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Main Logic JS -->
+  <script src="app.js"></script>
+</body>
+</html>
