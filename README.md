@@ -1,5 +1,5 @@
 # kaggle-capstone
-# 🚨 LifeBridge AI – Emergency Response & Disaster Assistant
+# 🚨 LifeBridge AI: Smart Crisis Management for Safer Tomorrow
 
 <p align="center">
   <img src="assets/readme/banner.png" alt="LifeBridge AI Banner" width="100%">
